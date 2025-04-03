@@ -15,10 +15,10 @@ library(purrr)
 ## ----eh, message = FALSE------------------------------------------------------
 library(ExperimentHub)
 eh <- ExperimentHub()
-query(eh, "Kang")
 
 ## ----load-data, message = FALSE-----------------------------------------------
-(sce <- eh[["EH2259"]])
+sce <- eh[["EH2259"]]
+dim(sce)
 
 ## ----fil----------------------------------------------------------------------
 # remove undetected genes
@@ -43,18 +43,18 @@ dim(sce)
 # compute sum-factors & normalize
 sce <- computeLibraryFactors(sce)
 sce <- logNormCounts(sce)
-
+dim(sce)
 ## ----vst, eval = FALSE--------------------------------------------------------
 #  library(sctransform)
 #  assays(sce)$vstresiduals <- vst(counts(sce), verbosity = FALSE)$y
 
 ## ----prep-sce-----------------------------------------------------------------
 sce$id <- paste0(sce$stim, sce$ind)
-(sce <- prepSCE(sce,
+sce <- prepSCE(sce,
                 kid = "cell", # subpopulation assignments
                 gid = "stim",  # group IDs (ctrl/stim)
                 sid = "id",   # sample IDs (ctrl/stim.1234)
-                drop = TRUE))  # drop all other colData columns
+                drop = TRUE)  # drop all other colData columns
 
 ## ----ids----------------------------------------------------------------------
 nk <- length(kids <- levels(sce$cluster_id))
@@ -67,14 +67,14 @@ t(table(sce$cluster_id, sce$sample_id))
 
 ## ----umap---------------------------------------------------------------------
 # compute UMAP using 1st 20 PCs
-sce <- runUMAP(sce, pca = 20)
+#sce <- runUMAP(sce, pca = 20)
 
 ## -----------------------------------------------------------------------------
 # wrapper to prettify reduced dimension plots
-.plot_dr <- function(sce, dr, col)
-  plotReducedDim(sce, dimred = dr, colour_by = col) +
-  guides(fill = guide_legend(override.aes = list(alpha = 1, size = 3))) +
-  theme_minimal() + theme(aspect.ratio = 1)
+# .plot_dr <- function(sce, dr, col)
+#   plotReducedDim(sce, dimred = dr, colour_by = col) +
+#   guides(fill = guide_legend(override.aes = list(alpha = 1, size = 3))) +
+#   theme_minimal() + theme(aspect.ratio = 1)
 
 ## ----eval = FALSE-------------------------------------------------------------
 #  # downsample to max. 100 cells per cluster
@@ -88,21 +88,21 @@ sce <- runUMAP(sce, pca = 20)
 #      .plot_dr(sce[, cs100], dr, col)
 
 ## ----dr-ids, echo = FALSE, results = "asis", fig.height = 4, fig.width = 12, fig.cap = "Dimension reduction plots. Cells are colored by cluster ID (A) and group ID (B), respectively. For each cluster, at most 100 cells were sampled for plotting."----
-cs_by_k <- split(colnames(sce), sce$cluster_id)
-cs100 <- unlist(sapply(cs_by_k, function(u)
-  sample(u, min(length(u), 100))))
+# cs_by_k <- split(colnames(sce), sce$cluster_id)
+# cs100 <- unlist(sapply(cs_by_k, function(u)
+#   sample(u, min(length(u), 100))))
 
-for (dr in c("TSNE", "UMAP")) {
-  cat("#### ", dr, "{-}\n")
-  ps <- lapply(c("cluster_id", "group_id"),
-               function(col) .plot_dr(sce[, cs100], dr, col = col))
-  assign(paste0("ps_", tolower(dr)), ps)
-  print(wrap_plots(ps, align = "vh", labels = c("A", "B")))
-  cat("\n\n")
-}
+# for (dr in c("TSNE", "UMAP")) {
+#   cat("#### ", dr, "{-}\n")
+#   ps <- lapply(c("cluster_id", "group_id"),
+#                function(col) .plot_dr(sce[, cs100], dr, col = col))
+#   assign(paste0("ps_", tolower(dr)), ps)
+#   print(wrap_plots(ps, align = "vh", labels = c("A", "B")))
+#   cat("\n\n")
+# }
 
 ## ----echo = FALSE, out.height = 4, fig.cap = "Schematic overview of cell- and sample-level approaches for DS analysis. Top panels show a schematic of the data distributions or aggregates across samples (each violin is a group or sample; each dot is a sample) and conditions (blue or orange). The bottom panels highlight the data organization in sub-matrix slices of the original count table."----
-knitr::include_graphics(system.file('extdata', '1d.png', package = 'muscat'))
+#knitr::include_graphics(system.file('extdata', '1d.png', package = 'muscat'))
 
 ## ----agg----------------------------------------------------------------------
 pb <- aggregateData(sce,
@@ -114,17 +114,17 @@ assayNames(pb)
 t(head(assay(pb)))
 
 ## ----pb-mds, fig.height = 4, fig.cap = "Pseudobulk-level multidimensional scaling (MDS) plot. Each point represents a cluster-sample instance; points are colored by cluster ID and shaped by group ID."----
-(pb_mds <- pbMDS(pb))
+pb_mds <- pbMDS(pb)
 
 ## ----message = FALSE, fig.height = 4, fig.cap = "Pseudobulk-level MDS plot v2. Default plotting aesthetics were modified to change shaping of groups, coloring of clusters, as well as point size and transparency."----
 # use very distinctive shaping of groups & change cluster colors
-pb_mds <- pb_mds +
-  scale_shape_manual(values = c(17, 4)) +
-  scale_color_manual(values = RColorBrewer::brewer.pal(8, "Set2"))
-# change point size & alpha
-pb_mds$layers[[1]]$aes_params$size <- 5
-pb_mds$layers[[1]]$aes_params$alpha <- 0.6
-pb_mds
+# pb_mds <- pb_mds +
+#   scale_shape_manual(values = c(17, 4)) +
+#   scale_color_manual(values = RColorBrewer::brewer.pal(8, "Set2"))
+# # change point size & alpha
+# pb_mds$layers[[1]]$aes_params$size <- 5
+# pb_mds$layers[[1]]$aes_params$alpha <- 0.6
+# pb_mds
 
 ## -----------------------------------------------------------------------------
 # run DS analysis
@@ -221,12 +221,12 @@ top8 <- bind_rows(tbl_fil) %>%
   pull("gene")
 
 # for ea. gene in 'top8', plot t-SNE colored by its expression
-ps <- lapply(top8, function(g)
-  .plot_dr(sce[, cs100], "TSNE", g) +
-    ggtitle(g) + theme(legend.position = "none"))
+# ps <- lapply(top8, function(g)
+#   .plot_dr(sce[, cs100], "TSNE", g) +
+#     ggtitle(g) + theme(legend.position = "none"))
 
 # arrange plots
-plot_grid(plotlist = ps, ncol = 4, align = "vh")
+# plot_grid(plotlist = ps, ncol = 4, align = "vh")
 
 ## ----violins, fig.width = 10, fig.height = 5, fig.cap = "Violin plots. Show are the top 6 hits (lowest adj. p-value) for the B cells cluster. Each violin is a sample; points are colored by group ID."----
 plotExpression(sce[, sce$cluster_id == "B cells"],
