@@ -2,6 +2,19 @@
 
 This project uses [`renv`](https://rstudio.github.io/renv/) for package management to ensure **consistent environments** across different systems (Windows & macOS).
 
+Core package dependencies:
+
+- tidyverse
+- patchwork
+- UpSetR
+- bioconductor
+- ExperimentHub
+- limma
+- muscData
+- muscat
+- scater
+
+
 ## 📥 Setup Instructions
 Follow these steps to get started after cloning the repository.
 
