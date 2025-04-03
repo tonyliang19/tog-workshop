@@ -1,6 +1,4 @@
-# 🚀 Project Name: R Environment Setup with `renv`
-
-This project uses [`renv`](https://rstudio.github.io/renv/) for package management to ensure **consistent environments** across different systems (Windows & macOS).
+# TOG Workshop Apr 15
 
 Core package dependencies:
 
@@ -15,17 +13,43 @@ Core package dependencies:
 - scater
 
 
-## 📥 Setup Instructions
-Follow these steps to get started after cloning the repository.
 
-### 1️⃣ Install `renv` (if not installed)
-Open **R/RStudio** and run:  
+
+
+## 📥 Setup Instructions
+Follow these steps to get started.
+
+### 1️⃣ Clone the Repository
+You can clone the repository using either **RStudio** or the command line.
+
+#### Option 1: Using RStudio
+1. Open **RStudio**.
+2. Go to **File** → **New Project** → **Version Control** → **Git**.
+3. In the **Repository URL** field, enter:
+   ```sh
+   https://github.com/tonyliang19/tog-workshop
+   ```
+4. Choose a local directory to store the project.
+5. Click **Create Project** to clone the repository.
+
+#### Option 2: Using the Command Line
+Alternatively, you can clone the repository with:
+```sh
+git clone https://github.com/tonyliang19/tog-workshop
+```
+
+Then, open **R/RStudio** and navigate to the project directory.
+
+---
+
+### 2️⃣ Install `renv` (if not installed)
+Open **RStudio** and run:
 ```r
 install.packages("renv")  # Installs renv package
 ```
 
-### 2️⃣ Restore the Project Environment
-Run this in R to install all required packages:  
+### 3️⃣ Restore the Project Environment
+Run this in R to install all required packages:
 ```r
 renv::restore()  # Installs all packages from renv.lock
 ```
@@ -51,7 +75,7 @@ If you don’t have **Homebrew**, install it first:
 
 ### 🖥 Windows Users
 - If package installation fails, make sure you have **Rtools** installed:  
-  Download from [CRAN Rtools](https://cran.r-project.org/bin/windows/Rtools/)  
+  Download from [CRAN Rtools](https://cran.r-project.org/bin/windows/Rtools/)
 
 ### 🍏 Mac Users
 - If Bioconductor packages fail, try:  
@@ -59,17 +83,6 @@ If you don’t have **Homebrew**, install it first:
   BiocManager::install("your_package_name", force = TRUE)
   ```
 
----
-
-## 📂 Files Included in This Repo
-
-| File | Description |
-|------|------------|
-| `renv.lock` | Stores package versions for reproducibility |
-| `renv/activate.R` | Ensures `renv` is activated in the project |
-| `.gitignore` | Ignores unnecessary files like `renv/library/` |
-
----
-
 ## 📢 Need Help?
-If you run into issues, feel free to ask! 🚀  
+If you run into issues, feel free to ask! 🚀
+
