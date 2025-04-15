@@ -10,6 +10,9 @@
 
 #library(knitr)
 library(cowplot)
+library(scater)
+library(muscat)
+library(ggplot2)
 library(ExperimentHub)
 ```
 
@@ -19,7 +22,7 @@ library(ExperimentHub)
 - BSc. in Math + minor in Data Science
 
 - What does "bioinformatician" do? 
-  - Assist researchers like you to better understand what you're data means
+  - Assist researchers like you to better understand what your data means
   - ~~We're just coders that know little bit more bio~~ ...
   
 - Currently working in creating pipeline, tools, models analyzing biological data in an automated-fashion
@@ -61,7 +64,7 @@ sce
 
 ## Preprocessing of data before analysis
 
-The data retrieved is [rawest form]{.secondary}, not all of it is useful.
+The data retrieved is [rawest form]{.secondary}, not all of it is suitable for analysis.
 
 Caveats:
 
@@ -102,7 +105,7 @@ We only perfom simple actions
 sce <- sce[rowSums(counts(sce) > 0) > 0, ]
 sce
 ```
-- Reduced from $35635$ genes to $18890$, nearly 16 genes that were not detected in any cells
+- Reduced from $35635$ genes to $18890$, nearly 16K genes that were not detected in any cells
 
 ::: {.notes}
 
@@ -200,6 +203,162 @@ sce <- muscat::prepSCE(sce,
     drop = TRUE)  # drop all other colData columns
 sce
 ```
+## MUSCAT
+
+Sample level analysis (pseudobulk)
+
+- Aggregate measurements for each sample (in each cluster)
+- Leverage existing robust bulk RNA-seq frameworks, edgeR [@robinson2010edger], DESeq2 [@love2014moderated] , limma [@ritchie2015limma]
+
+Cell level analysis ([Important]{.tertiary}, what we care, but limited)
+
+- Fit linear mixed model for each gene to cell level measurement data
+
+Under the hood, these involves statistics modelling, mainly linear regression in high dimension setting.
+
+
+## Sample level
+
+```{r}
+#| label: "sample-level-agg"
+#| eval: true
+pb <- muscat::aggregateData(sce,
+    assay = "counts", fun = "sum",
+    by = c("cluster_id", "sample_id"))
+# Note it changed to 16 clusters, which is pre-defined earlier
+pb
+```
+## Sample level -- model fitting
+
+```{r}
+#| label: "sample-level-model-fitting"
+# construct design & contrast matrix
+ei <- metadata(sce)$experiment_info
+ei
+# This is actual model
+mm <- model.matrix(~ 0 + ei$group_id)
+dimnames(mm) <- list(ei$sample_id, levels(ei$group_id))
+contrast <- limma::makeContrasts("stim-ctrl", levels = mm)
+# run DS analysis
+sample_res <- muscat::pbDS(pb, design = mm, contrast = contrast, verbose = F)
+# We have a list of top tables for each cluster
+tbl <- sample_res$table[[1]]
+names(tbl)
+```
+
+## Sample level -- between cluster concordance
+
+- which genes are DE in only a single (or very few) clusters? 
+- How many DE genes are shared between clusters?
+
+```{r}
+# filter FDR < 5%, abs(logFC) > 1 & sort by adj. p-value
+tbl_fil <- lapply(tbl, function(u) {
+  u <- dplyr::filter(u, p_adj.loc < 0.05, abs(logFC) > 1)
+  dplyr::arrange(u, p_adj.loc)
+})
+
+de_gs_by_k <- purrr::map(tbl_fil, "gene")
+UpSetR::upset(UpSetR::fromList(de_gs_by_k))
+```
+
+## Sample level -- pseudobulk heatmap top N DS genes per cluster 
+
+```{r}
+#| label: "heatmap-per-cluster"
+
+# top-5 DS genes per cluster
+muscat::pbHeatmap(sce, sample_res, top_n = 5)
+```
+
+- Good when wanting to gain an overview of numerous DE testing results for many clusters
+
+## Sample level -- pseudobulk heatmap top N DS genes for single cluster 
+
+```{r}
+#| label: "heatmap-for-single-cluster"
+
+# top-5 DS genes per cluster
+muscat::pbHeatmap(sce, sample_res, k = "B cells")
+```
+
+Moreover, it provides a set of options regarding which cluster(s), gene(s), and comparison to include (arguments k, g and c, respectively).
+
+## Sample level -- pseudobulk heatmap for single gene all clusters
+
+```{r}
+#| label: "heatmap-single-gene-all-clusters"
+# single gene across all clusters
+muscat::pbHeatmap(sce, sample_res, g = "ISG20")
+```
+
+- Also could visualize cluster-sample means of a single gene of interest across all clusters 
+  - Identify cell-types that are affected similarly by different experimental conditions
+
+## Cell level
+
+```{r}
+#| label: "cell-level-model"
+
+scater::plotExpression(sce[, sce$cluster_id == "B cells"],
+  features = tbl_fil$`B cells`$gene[seq_len(6)],
+  x = "sample_id", colour_by = "group_id", ncol = 3) +
+  guides(fill = guide_legend(override.aes = list(size = 5, alpha = 1))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+- For changes of high interest, we can view the cell-level expression profiles of a specific gene across samples or groups
+
+## Conclusion
+
+- scRNA-seq data is messy by nature — preprocessing is essential before any analysis.
+- We used scater for:
+  - Removing undetected/low-quality genes & cells
+  - Normalizing expression values
+- MUSCAT provides series of convenient functions to analyze scRNA-seq data
+  - Although it focuses on bulk-level by aggregating them cells
+  
+
+# Thanks! {.thanks}
+
+## {#acknowledgements .smaller}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+
+- [Dr. Amrit Singh]{.bold}
+- Dr. Young Woong Kim
+- Dr. Maryam Ahmadzadeh
+- Rishika Daswani
+- Roy He
+- Michael Yoon
+- Jeffrey Tang
+- Akshdeep Sandhu
+- Yovindu Don
+- Raam Sivakumar
+- Prabhleen Sandhu
+- Mingming Zhang
+- Samuel Leung
+
+:::
+::: {.column width="50%"}
+
+```{r}
+knitr::include_graphics("assets/lab_pic.jpg")
+```
+
+:::
+
+::::
+
+
+::: {.footer}
+![](assets/logo.png)
+:::
 
 ## Reference
 
+::: {#refs}
+:::
