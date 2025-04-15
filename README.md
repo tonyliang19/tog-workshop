@@ -13,9 +13,6 @@ Core package dependencies:
 - scater
 
 
-
-
-
 ## 📥 Setup Instructions
 Follow these steps to get started.
 
@@ -73,7 +70,11 @@ If you don’t have **Homebrew**, install it first:
 
 ## 🐞 Troubleshooting
 
+- You need R version of at least 4.3 and Bioconductor >= 3.18
+
+
 ### 🖥 Windows Users
+
 - If package installation fails, make sure you have **Rtools** installed:  
   Download from [CRAN Rtools](https://cran.r-project.org/bin/windows/Rtools/)
 
