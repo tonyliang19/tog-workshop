@@ -1,1 +1,109 @@
-This is the content
+
+## About myself
+
+<!--- setup r lib -->
+```{r}
+#| label: "setup"
+#| echo: false
+#| include: false
+#| eval: true
+
+#library(knitr)
+library(cowplot)
+library(ExperimentHub)
+```
+
+
+- PhD student in Bioinformatics under Dr. Amrit Singh supervision
+
+- BSc. in Math + minor in Data Science
+
+- What does "bioinformatician" do? 
+  - Assist researchers like you to better understand what you're data means
+  - ~~We're just coders that know little bit more bio~~ ...
+  
+- Currently working in creating pipeline, tools, models analyzing biological data in an automated-fashion
+  - Focused on machine learning & [AI]{.secondary}
+  - [Reproducible]{.tertiary} workflows 
+
+  
+
+
+## Single Cell RNA-seq
+
+What is single cell RNA sequencing?
+
+
+
+
+
+## Loading data
+
+The data is from a study [@kang2018multiplexed] and publicly avaliable  through R's `ExperimentHub` function
+
+
+```{r}
+#| label: "load-data"
+#| echo: true
+#| eval: true
+
+
+eh <- ExperimentHub() #  Initialize the hub as some list object
+sce <- eh[["EH2259"]] # We could then extract the match entry by taking this entry from out hub
+# Then print it
+sce
+```
+
+- After loaded data should inspect basic information
+- What are rows? column? size of data?
+- [Rows]{.tertiary} = genes
+- [Columns]{.secondary} = cells
+
+## Preprocessing of data before analysis
+
+The data retrieved is [rawest form]{.secondary}, not all of it is useful.
+
+Caveats:
+
+::: {.incremental}
+
+- Undetected genes
+- Cells with very few or many detected genes
+- Lowly expressed genes
+- unnormalized expression values
+
+:::
+
+
+
+
+::: {.fragment}
+
+This is usually the **quality control** (QC) step. This could potentially be another tutorial, so not deeply covered today.
+
+We only perfom simple actions
+
+:::
+
+::: {.notes}
+
+- QC to remove damaged cells, poor sequencing libraries,  error
+
+:::
+
+## Remove undetected genes
+
+```{r}
+#| label: "remove-undetected"
+#| echo: true
+#| eval: true
+
+counts(sce) |> colnames() |> sample(10)
+
+```
+
+
+
+
+## Reference
+
