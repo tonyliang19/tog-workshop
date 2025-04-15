@@ -93,17 +93,113 @@ We only perfom simple actions
 
 ## Remove undetected genes
 
+
 ```{r}
 #| label: "remove-undetected"
 #| echo: true
 #| eval: true
 
-counts(sce) |> colnames() |> sample(10)
-
+sce <- sce[rowSums(counts(sce) > 0) > 0, ]
+sce
 ```
+- Reduced from $35635$ genes to $18890$, nearly 16 genes that were not detected in any cells
+
+::: {.notes}
+
+Recall rows are genes, so that means we need to perform some operations with our rows
+
+We need to check expression value of each cell for any given gene:
+
+- If detected, we should have a non-zero expression value in a cell of a given gene
+- If not detected, we should have a zero expression value in a cell of a given gene
+- This translates to `counts(sce) > 0`
+
+There is a convenient function `rowSums()` just add up each element of a row.
 
 
+:::
 
+## Remove cells with few or many detected genes
+
+```{r}
+#| label: "remove-few-many"
+#| echo: true
+#| eval: true
+
+# We need additional support to compute per cell quality control metrics from scater package
+qc <- scater::perCellQCMetrics(sce)
+# remove cells with few or many detected genes
+ol <- scater::isOutlier(metric = qc$detected, nmads = 2, log = TRUE)
+# Then we remove those are consider as outlier
+sce <- sce[, !ol] # This means retain column that are not ol
+dim(sce)
+```
+- Now we changed 29065 cells to 26820 cells, where these cells are either overly abundant or too few
+
+
+## Remove lowly expressed genes
+
+```{r}
+#| label: "remove-lowly-expressed"
+#| echo: true
+#| eval: true
+
+# Similar to early, see pattern now with rowSums
+# But we want to at least have 10 cells that high expression value, this threshold could change
+sce <- sce[rowSums(counts(sce) > 1) >= 10, ]
+sce
+```
+- Interesting now, we only retained 7118 genes from original 35K and 26820 cells from original 29K.
+- This would be our final "filtered data", but not entirely ready for analysis
+  - Need to normalize these expression values
+  
+## Normalize expression values
+
+Calculate a log2-transformed normalized expression values:
+
+- dividing each count by its size factor
+- adding pseudo count of 1
+- log transforming
+
+```{r}
+#| label: "normalize-counts"
+#| echo: true
+#| eval: true
+
+# compute sum-factors & normalize
+sce <- scater::computeLibraryFactors(sce)
+sce <- scater::logNormCounts(sce)
+sce
+```
+::: {.fragment}
+
+This is our finalized data that have gone through series of QC steps. Now, we move to **muscat**
+
+:::
+
+## MUSCAT
+
+multi-sample multi-group scRNA-seq analysis tools [@crowell2020muscat]
+
+It expects a SCE and requires cell metadata columns to have:
+
+- sample_id : sample identifier i.e. Nautilus_trt_3
+- cluster id: subpopulation (cluster assignment) i.e. T cells, monocytes
+- group id: experimental group/condition i.e. control/treatment, healthy/diseased
+
+
+```{r}
+#| label: "prepare-muscat"
+#| echo: true
+#| eval: true
+sce$id <- paste0(sce$stim, sce$ind)
+sce <- muscat::prepSCE(sce, 
+    kid = "cell", # subpopulation assignments
+    gid = "stim",  # group IDs (ctrl/stim)
+    sid = "id",   # sample IDs (ctrl/stim.1234)
+    drop = TRUE)  # drop all other colData columns
+sce
+```
 
 ## Reference
 
